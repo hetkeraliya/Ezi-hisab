@@ -36,9 +36,6 @@
             </div>
         </div>
 
-        <!-- Warning Modal removed -->
-
-
         <!-- Main App Content -->
         <div id="main-content" class="flex flex-col flex-grow">
 
@@ -171,30 +168,30 @@
 
         // --- UI UTILITY FUNCTIONS ---
 
-        window.showMessage = (message) => {
+        function showMessage(message) {
             messageContentEl.textContent = message;
             messageModal.classList.remove('hidden');
-            // Show the default button for simple messages
             document.querySelector('#message-modal button').style.display = 'block'; 
-        };
+        }
 
-        window.hideMessage = () => {
+        function hideMessage() {
             messageModal.classList.add('hidden');
-        };
+        }
         
-        window.toggleOptionsMenu = () => {
+        function toggleOptionsMenu() {
             optionsMenu.classList.toggle('hidden');
-        };
+        }
 
-        window.toggleFormVisibility = () => {
+        function toggleFormVisibility() {
             const isHidden = addFormModal.classList.contains('hidden');
             if (isHidden) {
+                // Set the form date to the currently selected filter date
                 transactionFormDateInput.value = dateFilterInput.value;
                 addFormModal.classList.remove('hidden');
             } else {
                 addFormModal.classList.add('hidden');
             }
-        };
+        }
 
         const formatRupees = (amount) => {
             amount = amount || 0; 
@@ -217,7 +214,7 @@
 
         // --- LOCAL STORAGE FUNCTIONS ---
 
-        const loadLocalData = () => {
+        function loadLocalData() {
             try {
                 const data = localStorage.getItem(LOCAL_STORAGE_KEY);
                 if (data) {
@@ -231,9 +228,9 @@
             } catch (error) {
                 console.error("Error loading local data:", error);
             }
-        };
+        }
 
-        const saveLocalData = () => {
+        function saveLocalData() {
             try {
                 const dataToSave = {
                     transactions: allTransactions,
@@ -244,15 +241,14 @@
                 console.error("Error saving local data:", error);
                 showMessage("डेटा सेव करने में त्रुटि। (Error saving data.)");
             }
-        };
+        }
 
         // --- TRANSACTION LOGIC ---
 
-        const filterAndRenderTransactions = () => {
+        function filterAndRenderTransactions() {
             const selectedDateStr = dateFilterInput.value;
             if (!selectedDateStr) return;
 
-            // Normalize the date string for accurate comparison
             const selectedDate = new Date(selectedDateStr).toISOString().split('T')[0];
 
             let totalIncome = 0;
@@ -261,7 +257,7 @@
             
             const filteredTransactions = allTransactions
                 .filter(tx => tx.date === selectedDate)
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()); // Sort by newest first
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
             filteredTransactions.forEach(tx => {
                 const amount = parseFloat(tx.amount);
@@ -282,7 +278,7 @@
             } else {
                 noEntriesEl.classList.add('hidden');
             }
-        };
+        }
 
 
         document.getElementById('transaction-form').addEventListener('submit', (e) => {
@@ -305,7 +301,6 @@
                 return;
             }
 
-            // Create a new transaction object
             const newTransaction = {
                 id: currentTransactionId++,
                 amount: amount,
@@ -316,8 +311,8 @@
             };
 
             allTransactions.push(newTransaction);
-            saveLocalData(); // Save to local storage
-            filterAndRenderTransactions(); // Re-render the current day's list
+            saveLocalData(); 
+            filterAndRenderTransactions(); 
             
             form.reset();
             toggleFormVisibility();
@@ -327,14 +322,15 @@
         });
         
         // Link the date filter change to the rendering function
-        window.loadTransactionsForSelectedDate = filterAndRenderTransactions;
+        function loadTransactionsForSelectedDate() {
+             filterAndRenderTransactions();
+        }
 
         // --- PORTABILITY (Manual Export/Import) ---
 
-        window.exportData = () => {
+        function exportData() {
             const data = JSON.stringify({ transactions: allTransactions }, null, 2);
 
-            // Create a custom content block instead of forcing a download
             const exportContainer = document.createElement('div');
             exportContainer.innerHTML = `
                 <h3 class="text-xl font-bold text-blue-600 mb-3">बैकअप डेटा कॉपी करें</h3>
@@ -350,25 +346,21 @@
                 <button onclick="hideMessage()" class="mt-2 w-full bg-gray-400 text-white py-2 rounded-lg">बंद करें (Close)</button>
             `;
             
-            // Override message modal content
-            document.querySelector('#message-modal button').style.display = 'none'; // Hide default button
+            document.querySelector('#message-modal button').style.display = 'none'; 
             messageContentEl.innerHTML = '';
             messageContentEl.appendChild(exportContainer);
             messageModal.classList.remove('hidden');
+        }
 
-            // Set up copy button logic
-            window.copyBackupData = () => {
-                const textarea = document.getElementById('backup-data-textarea');
-                textarea.select();
-                document.execCommand('copy');
-                // Temporarily show message that data is copied
-                document.querySelector('#message-modal button').style.display = 'block'; 
-                showMessage("डेटा कॉपी हो गया है! अब आप इसे कहीं भी पेस्ट कर सकते हैं।");
-            };
-        };
+        function copyBackupData() {
+            const textarea = document.getElementById('backup-data-textarea');
+            textarea.select();
+            document.execCommand('copy');
+            document.querySelector('#message-modal button').style.display = 'block'; 
+            showMessage("डेटा कॉपी हो गया है! अब आप इसे कहीं भी पेस्ट कर सकते हैं।");
+        }
 
-        window.importDataPrompt = () => {
-            // Prompt the user for the text data
+        function importDataPrompt() {
             const importContainer = document.createElement('div');
             importContainer.innerHTML = `
                 <h3 class="text-xl font-bold text-blue-600 mb-3">डेटा इम्पोर्ट करें (Import Data)</h3>
@@ -384,18 +376,34 @@
                 <button onclick="hideMessage()" class="mt-2 w-full bg-gray-400 text-white py-2 rounded-lg">बंद करें (Close)</button>
             `;
             
-            // Override message modal content
-            document.querySelector('#message-modal button').style.display = 'none'; // Hide default button
+            document.querySelector('#message-modal button').style.display = 'none';
             messageContentEl.innerHTML = '';
             messageContentEl.appendChild(importContainer);
             messageModal.classList.remove('hidden');
-            
-            // Set up process import logic
-            window.processImport = () => {
-                const dataText = document.getElementById('import-data-textarea').value.trim();
-                try {
-                    const importedData = JSON.parse(dataText);
-                    
-                    if (importedData.transactions && Array.isArray(importedData.transactions)) {
-                        allTransactions = importedData.transactions;
-                        c
+        }
+
+        function processImport() {
+            const dataText = document.getElementById('import-data-textarea').value.trim();
+            try {
+                const importedData = JSON.parse(dataText);
+                
+                if (importedData.transactions && Array.isArray(importedData.transactions)) {
+                    allTransactions = importedData.transactions;
+                    const maxId = allTransactions.reduce((max, tx) => Math.max(max, tx.id || 0), 0);
+                    currentTransactionId = maxId + 1;
+
+                    saveLocalData();
+                    filterAndRenderTransactions();
+                    hideMessage();
+                    showMessage("डेटा सफलतापूर्वक इम्पोर्ट हो गया है। (Data imported successfully.)");
+                } else {
+                    showMessage("अमान्य डेटा फॉर्मेट। सही फ़ाइल पेस्ट करें। (Invalid data format.)");
+                }
+            } catch (error) {
+                showMessage("डेटा प्रोसेस करने में त्रुटि। कृपया सुनिश्चित करें कि यह सही फॉर्मेट में है।");
+            }
+        }
+
+        // --- INITIALIZATION ---
+
+      
